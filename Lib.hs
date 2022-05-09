@@ -2,7 +2,7 @@ module Lib where
 
 import Control.Monad
 
--- Buisness Logic  --
+-- Buisness Logic Module  --
 
 data Name = Name {
     firstName :: String,
@@ -20,6 +20,17 @@ data Student  = Student {
     studentName :: Name
 } deriving Show
 
+data Teacher = Teacher {
+    teacherId :: Int,
+    teacherName :: Name
+} deriving Show
+
+data Course = Course {
+    courseId :: Int,
+    courseTitle :: String,
+    teacher :: Int
+} deriving Show
+
 students :: [Student]
 students =  [(Student 1 Senior (Name "Audre" "Lorde"))
             ,(Student 2 Junior (Name "Leslie" "Silko"))
@@ -27,6 +38,19 @@ students =  [(Student 1 Senior (Name "Audre" "Lorde"))
             ,(Student 4 Senior (Name "Guy" "Debord"))
             ,(Student 5 Sophmore (Name "Jean" "Baudrillard"))
             ,(Student 6 Junior (Name "Julia" "Kristeva"))] 
+
+teachers :: [Teacher]
+teachers = [Teacher 100 (Name "Simone" "De Beauvior")
+            ,Teacher 200 (Name "Susan" "Sontag")] 
+
+courses :: [Course]
+courses = [Course 101 "French" 100
+          ,Course 201 "English" 200]
+
+-- Functions -- 
+
+startsWith :: Char -> String -> Bool
+startsWith char string = char == (head string)
 
 -- Select allows you to target a property from your students list for example --
 
@@ -43,3 +67,5 @@ _where test vals = do
     val <- vals
     guard (test val)
     return val
+
+

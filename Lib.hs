@@ -69,6 +69,11 @@ _where test vals = do
     return val
 
 -- The join function joins two data sets on matching properties --
+-- Input and Output example -> GHCi> _join teachers courses teacherId teacher
+-- [(Teacher {teacherId = 100, teacherName = Simone De Beauvior},
+-- ➥Course {courseId = 101, courseTitle = "French", teacher = 100}),
+-- ➥(Teacher {teacherId = 200, teacherName = Susan Sontag},Course
+-- ➥{courseId = 201, courseTitle = "English", teacher = 200})]
 
 _join :: Eq c => [a] -> [b] -> (a -> c) -> (b -> c) -> [(a,b)]
 _join data1 data2 prop1 prop2 = do
@@ -77,3 +82,16 @@ _join data1 data2 prop1 prop2 = do
     let dpairs = (d1,d2)
     guard ((prop1 (fst dpairs)) == (prop2 (snd dpairs)))
     return dpairs
+
+joinData = (_join teachers courses teacherId teacher)
+whereResult = _where ((== "English") . courseTitle . snd) joinData
+selectResult = _select (teacherName . fst) whereResult
+
+-- What you now want is to structure these as if they're SQL queries --
+
+_hinq selectQuery joinQuery whereQuery = (\joinData -> (\whereResult -> selectQuery whereResult)(whereQuery joinData)) joinQuery
+
+finalResult :: [Name]
+finalResult = _hinq (_select (teacherName . fst))
+                    (_join teachers courses teacherId teacher)
+                    (_where ((== "English") .courseTitle . snd))

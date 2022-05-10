@@ -68,4 +68,12 @@ _where test vals = do
     guard (test val)
     return val
 
+-- The join function joins two data sets on matching properties --
 
+_join :: Eq c => [a] -> [b] -> (a -> c) -> (b -> c) -> [(a,b)]
+_join data1 data2 prop1 prop2 = do
+    d1 <- data1
+    d2 <- data2
+    let dpairs = (d1,d2)
+    guard ((prop1 (fst dpairs)) == (prop2 (snd dpairs)))
+    return dpairs

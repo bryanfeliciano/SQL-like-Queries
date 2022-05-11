@@ -173,3 +173,12 @@ studentEnrollments = runHINQ studentEnrollmentsQ
 englishStudentsQ = HINQ (_select (fst . fst))
                         (_join studentEnrollments courses snd courseId)
                         (_where ((== "English") . courseTitle . snd))
+
+englishStudents :: [Name]
+englishStudents = runHINQ englishStudentsQ 
+
+getEnrollments :: String -> [Name]
+getEnrollments courseName = runHINQ courseQuery
+    where courseQuery = HINQ (_select (fst . fst))
+                             (_join studentEnrollments courses snd courseId)
+                             (_where ((== courseName) . courseTitle . snd))

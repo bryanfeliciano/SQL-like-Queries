@@ -37,6 +37,10 @@ data Course = Course {
 
 data HINQ m a b = HINQ (m a -> m b) (m a) (m a -> m a)| HINQ_ (m a -> m b) (m a)
 
+data Enrollment = Enrollment
+                            { student :: Int
+                            , course :: Int } deriving Show
+
 -- Variables --
 
 students :: [Student]
@@ -54,6 +58,16 @@ teachers = [Teacher 100 (Name "Simone" "De Beauvior")
 courses :: [Course]
 courses = [Course 101 "French" 100
           ,Course 201 "English" 200]
+
+enrollments :: [Enrollment]
+enrollments = [(Enrollment 1 101)
+              ,(Enrollment 2 101)
+              ,(Enrollment 2 201)
+              ,(Enrollment 3 101)
+              ,(Enrollment 4 201)
+              ,(Enrollment 4 101)
+              ,(Enrollment 5 101)
+              ,(Enrollment 6 201) ]
 
 -- Functions -- 
 
@@ -79,9 +93,9 @@ _where test vals = do
 -- The join function joins two data sets on matching properties --
 -- Input and Output example -> GHCi> _join teachers courses teacherId teacher
 -- [(Teacher {teacherId = 100, teacherName = Simone De Beauvior},
--- ➥Course {courseId = 101, courseTitle = "French", teacher = 100}),
--- ➥(Teacher {teacherId = 200, teacherName = Susan Sontag},Course
--- ➥{courseId = 201, courseTitle = "English", teacher = 200})]
+-- Course {courseId = 101, courseTitle = "French", teacher = 100}),
+-- (Teacher {teacherId = 200, teacherName = Susan Sontag},Course
+-- {courseId = 201, courseTitle = "English", teacher = 200})]
 
 _join :: Eq c => [a] -> [b] -> (a -> c) -> (b -> c) -> [(a,b)]
 _join data1 data2 prop1 prop2 = do
@@ -109,6 +123,12 @@ teacherFirstName = _hinq (_select firstName)
                          finalResult
                          (_where (\_ -> True))
 
+possibleTeacher :: Maybe Teacher
+possibleTeacher = Just (head teachers)
+                         
+possibleCourse :: Maybe Course
+possibleCourse = Just (head courses)
+
 -- Making a generic HINQ type to represent the queries you're interested in running (Line 35)--
 -- Then creating functions to execute HINQ queries --
 
@@ -124,3 +144,32 @@ query1 = HINQ (_select (teacherName . fst))
 query2 :: HINQ [] Teacher Name
 query2 = HINQ_ (_select teacherName)
                teachers
+
+-- Example output GHCi> runHINQ query2
+-- [Simone De Beauvior,Susan Sontag]
+
+maybeQuery1 :: HINQ Maybe (Teacher,Course) Name
+maybeQuery1 = HINQ (_select (teacherName . fst)) (_join possibleTeacher possibleCourse teacherId teacher) (_where ((== "French") .courseTitle . snd))
+
+missingCourse :: Maybe Course
+missingCourse = Nothing
+
+maybeQuery2 :: HINQ Maybe (Teacher,Course) Name
+maybeQuery2 = HINQ (_select (teacherName . fst))
+                   (_join possibleTeacher missingCourse teacherId teacher)
+                   (_where ((== "French") .courseTitle . snd))
+
+studentEnrollmentsQ = HINQ_ (_select (\(st,en) -> (studentName st, course en))(_join students enrollments studentId student))
+
+studentEnrollments :: [(Name, Int)]
+studentEnrollments = runHINQ studentEnrollmentsQ
+
+-- Example of output --
+-- GHCi> studentEnrollments
+-- [(Audre Lorde,101),(Leslie Silko,101),(Leslie Silko,201),
+-- (Judith Butler,101),(Guy Debord,201),(Guy Debord,101),
+-- (Jean Baudrillard,101),(Julia Kristeva,201)]
+
+englishStudentsQ = HINQ (_select (fst . fst))
+                        (_join studentEnrollments courses snd courseId)
+                        (_where ((== "English") . courseTitle . snd))

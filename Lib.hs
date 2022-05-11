@@ -1,8 +1,12 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use const" #-}
 module Lib where
-
 import Control.Monad
+import Control.Applicative
 
 -- Buisness Logic Module  --
+
+-- Data Types --
 
 data Name = Name {
     firstName :: String,
@@ -30,6 +34,10 @@ data Course = Course {
     courseTitle :: String,
     teacher :: Int
 } deriving Show
+
+data HINQ m a b = HINQ (m a -> m b) (m a) (m a -> m a)| HINQ_ (m a -> m b) (m a)
+
+-- Variables --
 
 students :: [Student]
 students =  [(Student 1 Senior (Name "Audre" "Lorde"))
@@ -95,3 +103,24 @@ finalResult :: [Name]
 finalResult = _hinq (_select (teacherName . fst))
                     (_join teachers courses teacherId teacher)
                     (_where ((== "English") .courseTitle . snd))
+
+teacherFirstName :: [String]
+teacherFirstName = _hinq (_select firstName)
+                         finalResult
+                         (_where (\_ -> True))
+
+-- Making a generic HINQ type to represent the queries you're interested in running (Line 35)--
+-- Then creating functions to execute HINQ queries --
+
+runHINQ :: (Monad m, Alternative m) => HINQ m a b -> m b
+runHINQ (HINQ sClause jClause wClause) = _hinq sClause jClause wClause
+runHINQ (HINQ_ sClause jClause) = _hinq sClause jClause (_where (\_ -> True))
+
+query1 :: HINQ [] (Teacher, Course) Name
+query1 = HINQ (_select (teacherName . fst))
+              (_join teachers courses teacherId teacher)
+              (_where ((== "English") .courseTitle . snd))
+
+query2 :: HINQ [] Teacher Name
+query2 = HINQ_ (_select teacherName)
+               teachers
